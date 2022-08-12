@@ -162,8 +162,13 @@ get_job_state() {
     get_job_state_name="$1"
     get_job_state_output=$(kubectl describe jobs "$get_job_state_name" $KUBECTL_ARGS 2>&1)
     if [ $? -ne 0 ]; then
-        echo "$get_job_state_output" >&2
-        kill -s TERM $TOP_PID
+        if expr match "$get_job_state_output" '\(.*not found$\)' 1>/dev/null ; then
+            echo "$get_job_state_output" >&2
+            # We do not kill since we want to allow jobs to not be
+        else
+            echo "$get_job_state_output" >&2
+            kill -s TERM $TOP_PID
+        fi
     elif [ $DEBUG -ge 2 ]; then
         echo "$get_job_state_output" >&2
     fi
